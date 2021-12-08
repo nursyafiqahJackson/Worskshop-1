@@ -1,0 +1,985 @@
+//This program is build to help the clinic maintaining a good system without any paper
+
+//author : NURSYAFIQAH ADILLA BINTI MOHD SYAFIQ @ JACKSON
+
+#pragma warning(disable :4996)
+#include<iostream>
+#include<cstdio>
+#include<fstream>
+#include<sstream>
+#include<cstdlib>
+#include<windows.h>
+#include<time.h>
+#include<ctime>
+#include<iomanip>
+#include<string>
+#include<conio.h>
+#include<mysql.h>
+
+
+using namespace std;
+
+int qstate; // global variable start
+MYSQL* conn;
+MYSQL_ROW row;
+MYSQL_RES* res; //sql that result the data 
+
+string PatientID, DermaID, AppoinmentID, TreatmentID, PaymentID; //user declaration variable 
+string name, ID, now; //storing user 
+
+//Global Variable Ended 
+
+class db_response
+{
+public:
+	static void ConnectionFunction()
+	{
+		conn = mysql_init(0);
+		if (conn)
+		{
+			cout << "\t\t+++++++++++++++++++++++++++++++++++++++++" << endl;
+			cout << "\t\t     Database sucessfully connected " << endl;
+			cout << "\t\t+++++++++++++++++++++++++++++++++++++++++" << endl;
+			cout << "Press any key to continue to the Login Menu" << endl;
+
+		}
+
+		else
+			cout << "\t\t     Database failed to connect. " << mysql_errno(conn) << endl;
+			conn = mysql_real_connect(conn, "127.0.0.1", "root", "", "aestheticclinic", 3306, NULL, 0);
+
+			if (conn)
+			{
+				cout << "Database connected to MySQL .. " << conn << endl;
+				cout << "Press any key to continue to the Login Menu" << endl;
+				_getch();
+				system("cls");
+			}
+
+			else
+				cout << " Failed to connect !!" << mysql_errno(conn) << endl << endl;
+
+	}
+}; // Database connection ended 
+
+//function declaration generally 
+void UserRegistration();
+void UserLogin();
+void ListTreatment();
+void Payment();
+void ReportTreatment();
+
+// function for patient 
+void PatientMenu();
+void AppointmentPatient();
+void InsertNewAppointmentPatient();
+
+// function for Dermatologist
+void DermaMenu();
+void PatientInformation();
+void AppointmentDerma();
+void InsertNewAppointmentDerma();
+void UpdateDeleteAppointment(); // this function only available for dermatologist to avoid access to other patient personal data 
+
+int main()
+{
+	system("cls");
+	system("Title Aesthetic Clinic Management System");
+	system("color 0E");
+
+	db_response::ConnectionFunction();
+
+	int chooseMenu = 0; 
+	//interface for the main page
+	cout << "\n\n" << endl;
+	cout << "\t\t=================================================================================" << endl;
+	cout << "\t\t                                                                                 " << endl;
+	cout << "\t\t                 WELCOME TO FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM              " << endl;
+	cout << "\t\t       Cosmetic Laser || Beauty || Implant || Plastic Surgery || Liposuction     " << endl;
+	cout << "\t\t                                                                                 " << endl;
+	cout << "\t\t=================================================================================" << endl << endl;
+	cout << "\t\t						 YOUR BEAUTY OUR PRIDE AND CARE 						  " << endl;
+	cout << "\t\t                                                                                 " << endl;
+	cout << "\t\t                                                                                 " << endl;
+
+	cout << "\n\t\t\t\t\t\t			1. LOGIN USER                                                 "<< endl;
+	cout << "\n\t\t\t\t\t\t			2. USER REGISTRATION 										  "<< endl;
+	cout << "\n\t\t\t\t\t\t			3. EXIT 													  "<< endl;
+	cin >> chooseMenu;
+
+	switch (chooseMenu)
+	{
+	case 1:
+		UserLogin();
+		break;
+
+	case 2:
+		UserRegistration();
+		break;
+
+	case 3:
+		cout << "Clearing the cache ..." << endl;
+		exit(0);
+
+	default:
+		cout << "Please choose only between the option given 1 - 3. Press ENTER to continue..."; //error validation
+		_getch();
+		system("cls");
+		
+		main(); //calling the return function to exit the case
+		break;
+	}
+	
+	return 0;
+}
+
+void UserRegistration()
+{
+	system("pause");
+	system("cls");
+	string nameP, contactP, pwdP, addP, ageP , DobP; //declare variable for this function
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					NEW USER REGISTRATION                      "<< endl;
+	cout << "\n\t\t\t\t================================================================" << endl; 
+	cout << "\t\t                                                                      " << endl;
+
+	cout << "\tPlease enter all the information requested below for registration : " << endl;
+	
+	//required new user to input their information to update in the db
+	cout << "\tName : ";
+	cin.ignore(1, '\n');
+	getline(cin, nameP);
+
+	cout << "\tPassword :";
+	getline(cin, pwdP);
+
+	cout << "\tPhone Number :";
+	getline(cin, contactP);
+
+	cout << "\tDate of Birth :";
+	getline(cin, DobP);
+
+	cout << "\tAddress :";
+	getline(cin, addP);
+
+	string checkUser_query = "select* from patient where PatientPhoneNumber = '" + contactP + "' limit 1";
+	const char* cu = checkUser_query.c_str();
+	qstate = mysql_query(conn, cu);
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+		if (res->row_count == 1)
+		{
+			cout << " The phone number already registered before. Please retry."; // phone number declared as unique
+			_getch();
+			UserRegistration(); //return to the function to re-register
+
+		}
+
+		else
+		{
+			string insertpatient_query = " Insert into patient (PatientName,PatientPassword,PatientPhoneNumber, PatientDOB, PatientAddress) values ('" + nameP + "' , '" + pwdP + "' , '" + contactP + "' , '" + DobP + "' , '" + addP + "')";
+			const char* q = insertpatient_query.c_str();
+			qstate = mysql_query(conn, q);
+
+			if (!qstate)
+			{
+				cout << endl << " Succesfully registered ! Press any key to continue to the system..";
+				_getch();
+				main(); //calling the return function to exit the case
+			}
+
+			else
+			{
+				cout << " Load system ERROR !!" << endl; //invalid & error handling
+			}
+		}
+	}
+
+}
+
+void UserLogin()
+{
+	system("pause");
+	system("cls");
+
+	string password; //declare variable for this function
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					USER LOGIN MENU			                   " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\t\t                                                                      " << endl;
+		
+	//entering values before log in for authentication
+	cout << "\n\tName :";
+	cin >> name;
+
+	cout << "\n\tPassword :";
+	getline(cin, password);
+
+	char ch;
+	while ((ch = _getch()) != 13)
+	{
+		password += ch;
+		cout << '*';
+	}
+
+	string checkUser_query = "select* from dermatologist where DermaName = '" + name + "' and DermaPassword = '" + password + "'";
+	const char* cu = checkUser_query.c_str(); // converting the variable mention to db 
+	qstate = mysql_query(conn, cu); // executing the database 
+
+	if (!qstate) // start query 
+	{
+		res = mysql_store_result(conn); // storing the variable
+		if (res->row_count == 1) //query found the first category user
+		{
+			while (row = mysql_fetch_row(res)) //looping in each row
+				DermaID = row[0];
+			DermaMenu(); // return back to user found 
+		}
+
+		else //  user & password none of found above, next category user
+		{
+			string checkUser_query = "select* from patient where PatientName = '" + name + "' and PatientPassword = '" + password + "'";
+			const char* cu = checkUser_query.c_str(); //converting the variable
+			qstate = mysql_query(conn, cu); //executing the db 
+		}
+
+		if (!qstate) //start new query
+		{
+			res = mysql_store_result(conn); //storing the variable
+			if (res->row_count == 1) // query found the next category user
+			{
+				while (row = mysql_fetch_row(res)) // looping in each row 
+					PatientID = row[7];
+				PatientMenu(); //return to next category user found 
+			}
+		}
+
+		else // wrong password and username
+		{
+			char c; //declaring the variable type used
+			cout << "\t\tINVALID NAME & PASSWORD !" << endl;
+			
+			cout << "Please check the spelling correctly." << endl;
+			cout << "If this happen again, kindly proceed to Helpdesk . " << endl;
+
+			cout << "\t\t\t Re-try again ? \t\t\t" << endl << endl;
+			cout << "Press Y for Yes and N for No " << endl;
+			cin >> c;
+			if (c == 'y' || c == 'Y')
+				UserLogin(); //back to retry login
+			else
+				main(); //executing out to the main page 
+		}
+
+	}
+
+}
+
+//function for patient only start 
+void PatientMenu()
+{
+	system("pause");
+	system("cls");
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					PATIENT MENU			                   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\n\t Hi, " << name << " ! " << "What can we help you today ?" << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\t\t														   " << endl;
+
+	//system fetch data from db 
+	string patient_query = "select* from patient where PatientName = '" + name + "'";
+	const char* cu = patient_query.c_str();
+	qstate = mysql_query(conn, cu);
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+		while (row = mysql_fetch_row(res))
+		{
+			cout << "\n\tPatientID : " << row[7];
+			cout << "\n\tPatient Phone Number : " << row[0];
+			cout << "\n\tPatient DOB : " << row[4];
+			cout << "\n\tPatient Address : " << row[5];
+			cout << "\n\tPatient Dermatologist : " << row[2] << endl ;
+		}
+	}
+
+	else
+	{
+		cout << "Query Error !! " << mysql_errno(conn) << endl;
+
+	}
+
+	int chooseOne; //declaring type variable 
+	cout << "\n\t\t\t\t###################################################" << endl;
+	cout << "\n\t\t\t\t\t				LIST PATIENT MENU			      " << endl;
+	cout << "\n\t\t\t\t\t												  " << endl;
+	cout << "\n\t\t\t\t\t			1. LIST OF TREATMENT OFFERED 		  " << endl;
+	cout << "\n\t\t\t\t\t			2. LIST APPOINTMENT BOOKED 			  " << endl;
+	cout << "\n\t\t\t\t\t			3. BOOK A NEW BOOKING				  " << endl;
+	cout << "\n\t\t\t\t\t			4. E- RECEIPT 						  " << endl;
+	cout << "\n\t\t\t\t\t			5. EXIT PATIENT MENU				  " << endl;
+	cout << "\n\t\t\t\t\t												  " << endl;
+	cout << "\n\t\t\t\t###################################################" << endl;
+
+	cin >> chooseOne;
+
+	switch (chooseOne) // choosen by user from the interface above with linked functions
+	{
+	case 1 :
+		ListTreatment();
+		break;
+
+	case 2: 
+		AppointmentPatient();
+		break;
+
+	case 3:
+		InsertNewAppointmentPatient();
+		break;
+
+	case 4:
+		Payment();
+		break;
+
+	case 5: 
+		cout << " Clearing the cache ... " << endl;
+		exit(0);
+
+	default :
+		cout << "Please choose only between the option given 1 - 5. Press ENTER to continue..." << endl;
+		_getch();
+		system("cls");
+
+		main(); // returning to main menu if user enter different value 
+		break;
+	}
+}
+
+void AppointmentPatient()
+{
+	system("pause");
+	system("cls");
+
+	string appoinmentID; // declaring the variable type for this function 
+	
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					LIST OF APPOINMENT				           " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+	
+	//db fetching data to the system 
+	string search_query = "select* from appoinment where PatientID = '" + ID + "'";
+	const char* a = search_query.c_str();
+	qstate = mysql_query(conn, a);
+	res = mysql_store_result(conn);
+
+	cout << "\t\t\tThe table below shows list of appoinment available : " << endl;
+	cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+	cout << setw(6) << "Appoinment ID" << setw(23) << "Appoinment Date" << setw(18) << "Patient ID" << setw(16) << "Treatment ID" << setw(20) << "Treatment Name" << setw(16) << "Dermatologist ID" << endl;
+
+	while ((row = mysql_fetch_row(res)))
+	{
+		cout << setw(6) << row[0] << setw(26) << row[3] << setw(18) << row[1] << setw(17) << row[5] << setw(20) << row[4] << setw(17) << row[2] << endl;
+	}
+	cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+	cout << "\nPress Any Key to return";
+	getch();
+	PatientMenu(); // return to the function before to exit view 
+}
+
+void InsertNewAppointmentPatient()
+{
+	system("pause");
+	system("break");
+
+	int chooseOne; //declaring variables in this function
+	string appID, appDate, appTime, ptID, trtID, trtType, dermaId, getID, getRid;
+	//declaring variable with type for db to system
+
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                "<< endl << endl;
+	cout << "\n\t\t\t\t\t					BOOKING OF APPOINMENT					   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+
+	qstate = mysql_query(conn, "select* from treatment");
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+
+		cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+		cout << setw(6) << "Treatment ID" << setw(10) << "Treatment Cost" << setw(25) << "Name" << setw(18) << "Dermatologist" <<endl;
+
+		while ((row = mysql_fetch_row(res)))
+		{
+			cout << setw(6) << row[0] << setw(14) << row[1] << setw(26) << row[2] << setw(16) << row[3] << endl;
+		}
+
+		cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+	}
+
+	cout << "\n\tAppointment Date (yyyy-mm-dd	hh:mm:ss) : ";
+	cin >> appDate;
+
+	cout << " \n\tPatient ID : " << PatientID << endl; 
+
+	cout << "\n\tTreatment Name : ";
+	cin >> trtType;
+
+	//executing data from db to the system
+	string search_query = "select TreatmentType, DermaID from appoinment where TreatmentType= '" + trtType + "'";
+	const char* f = search_query.c_str();
+	
+	qstate = mysql_query(conn, f);
+	
+	if (!qstate) {
+		res = mysql_store_result(conn);
+		
+		while (row = mysql_fetch_row(res));
+		{
+			trtID = row[0];
+			dermaId = row[1];
+
+			cout << "\n\tTreatment ID : " << trtID << endl;
+			cout << "\n\tDermatologist ID : " << dermaId << endl;
+
+		}
+	}
+
+	string getNow = "select NOW()";
+	const char* b = getNow.c_str();
+	qstate = mysql_query(conn, b);
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+		while (row = mysql_fetch_row(res))
+			now = row[0];
+
+		cout << "\nNow : " << now;
+	}
+
+	if (appDate < now)
+	{
+		cout << "\n\tThis date and time are invalid !!" << endl;
+	}
+
+	if (appDate > now)
+	{
+		string insert_query = " Insert into appoinment ( AppoinmentDate, PatientID, TreatmentID, TreatmentType, DermaID) values ( '" + appDate + "' , '" + appID + "', '" + trtID + "','" + trtType + "', '" + dermaId + "' )";
+		const char* q = insert_query.c_str();
+		qstate = mysql_query(conn, q);
+
+		if (!qstate)
+		{
+			cout << endl << " Appointment booked ! " << endl;
+		}
+
+		else
+		{
+			cout << "Query error .." << mysql_errno(conn) << endl;
+		}
+
+	}
+
+	cout << "\n\n Press any key to return ";
+	getch();
+
+	PatientMenu();
+
+}
+//function for patient only end  
+
+//function for dermatologist only start
+void DermaMenu()
+{
+	system("pause");
+	system("cls");
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					DERMATOLOGIST MENU			                   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\n\t Hi, " << name << " ! " << "What can we help you today ?			   "<< endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\t\t														               " << endl;
+
+	//system fetch data from db 
+	string dermatologist_query = "select* from dermatologist where DermaName = '" + name + "'";
+	const char* cu = dermatologist_query.c_str();
+	qstate = mysql_query(conn, cu);
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+		while (row = mysql_fetch_row(res))
+		{
+			cout << "\n\tDermatologist ID : " << row[5];
+			cout << "\n\tDermatologist Phone Number : " << row[2];
+			cout << "\n\tDermatologist DOB : " << row[3];
+			cout << "\n\tDermatologist Address : " << row[4];
+		}
+	}
+
+	else
+	{
+		cout << "Query Error !! " << mysql_errno(conn) << endl;
+
+	}
+
+	int chooseOne; //declaring type variable 
+	cout << "\n\t\t\t\t###################################################" << endl;
+	cout << "\n\t\t\t\t\t				LIST DERMATOLOGIST MENU			  " << endl;
+	cout << "\n\t\t\t\t\t												  " << endl;
+	cout << "\n\t\t\t\t\t			1. PATIENT INFORMATION 		          " << endl;
+	cout << "\n\t\t\t\t\t			2. LIST APPOINTMENT  			      " << endl;
+	cout << "\n\t\t\t\t\t			3. BOOK A NEW APPOINMENT			  " << endl;
+	cout << "\n\t\t\t\t\t			4. UPDATE & DELETE APPOINMENT 		  " << endl;
+	cout << "\n\t\t\t\t\t			5. PATIENT RECORD  					  " << endl;
+	cout << "\n\t\t\t\t\t			6. EXIT DERMATOLOGIST MENU			  " << endl;
+	cout << "\n\t\t\t\t\t												  " << endl;
+	cout << "\n\t\t\t\t###################################################" << endl;
+
+	cin >> chooseOne;
+
+	switch (chooseOne) // choosen by user from the interface above with linked functions
+	{
+	case 1:
+		PatientInformation();
+		break;
+
+	case 2:
+		AppointmentDerma();
+		break;
+
+	case 3:
+		InsertNewAppointmentDerma();
+		break;
+
+	case 4:
+		UpdateDeleteAppointment();
+		break;
+	case 5:
+		ReportTreatment();
+		break;
+
+	case 6:
+		cout << " Clearing the cache ... " << endl;
+		exit(0);
+
+	default:
+		cout << "Please choose only between the option given 1 - 6. Press ENTER to continue..." << endl;
+		_getch();
+		system("cls");
+
+		main(); // returning to main menu if user enter different value 
+		break;
+	}
+}
+void PatientInformation() 
+{
+	system("pause");
+	system("cls");
+
+	string PatientId;
+
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					PATIENT INFORMATION 			           " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+	
+	cout << "\n\tWhich patient you enquiry for ? ";
+	cin >> PatientId;
+	cout << endl << endl;
+
+	string patient_query = "select* from patient where PatientID = '" + PatientId + "'";
+	const char* cu = patient_query.c_str();
+	qstate = mysql_query(conn, cu);
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+
+		while (row = mysql_fetch_row(res))
+		{
+			cout << "\n\tPatient Name: " << row[6];
+			cout << "\n\tPatient Phone Number: "<< row[0];
+			cout << "\n\tPatient's Age: "<< row[4];
+			cout << "\n\tPatient's Address: "<< row[5];
+			cout << endl;
+		}
+
+		getch();
+		DermaMenu();
+	}
+}
+void AppointmentDerma() 
+{
+	system("pause");
+	system("cls");
+
+	string appoinmentID; // declaring the variable type for this function 
+
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					LIST OF APPOINMENT DERMA 			       " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+
+	//db fetching data to the system 
+	string search_query = "select* from appoinment where DermaID = '" + ID + "'and AppointmentDate > NOW()";
+	const char* t = search_query.c_str();
+	qstate = mysql_query(conn, t);
+	res = mysql_store_result(conn);
+
+	cout << "\t\t\tThe table below shows list of appoinment available : " << endl;
+	cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+	cout << setw(6) << "Appoinment ID" << setw(23) << "Appoinment Date" << setw(18) << "Patient ID" << setw(16) << "Treatment ID" << setw(20) << "Treatment Name" << setw(16) << "Dermatologist ID" << endl;
+
+	while ((row = mysql_fetch_row(res)))
+	{
+		cout << setw(6) << row[0] << setw(26) << row[3] << setw(18) << row[1] << setw(17) << row[5] << setw(20) << row[4] << setw(17) << row[2] << endl;
+	}
+	cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+	cout << "\nPress Any Key to return";
+	getch();
+	DermaMenu(); // return to the function before to exit view 
+}
+void InsertNewAppointmentDerma()
+{
+	system("pause");
+	system("break");
+
+	int chooseOne; //declaring variables in this function
+	string appID, appDate, appTime, ptID, trtID, trtType, dermaId;
+	//declaring variable with type for db to system
+
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					BOOKING OF APPOINMENT					   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+
+	qstate = mysql_query(conn, "select* from treatment");
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+
+		cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+		cout << setw(6) << "Treatment ID" << setw(10) << "Treatment Cost" << setw(25) << "Name" << setw(18) << "Dermatologist" << endl;
+
+		while ((row = mysql_fetch_row(res)))
+		{
+			cout << setw(6) << row[0] << setw(14) << row[1] << setw(26) << row[2] << setw(16) << row[3] << endl;
+		}
+
+		cout << "\t\t------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+	}
+
+	cout << "\n\tAppointment Date (yyyy-mm-dd	hh:mm:ss) : ";
+	cin >> appDate;
+
+	cout << " \n\tPatient ID : " << PatientID << endl;
+
+	cout << "\n\tTreatment Name : ";
+	cin >> trtType;
+
+	//executing data from db to the system
+	string search_query = "select TreatmentID, DermaID from appoinment where TreatmentType= '" + trtType + "'";
+	const char* f = search_query.c_str();
+
+	qstate = mysql_query(conn, f);
+
+	if (!qstate) {
+		res = mysql_store_result(conn);
+
+		while (row = mysql_fetch_row(res));
+		{
+			trtID = row[0];
+			dermaId = row[1];
+
+			cout << "\n\tTreatment ID : " << trtID << endl;
+			cout << "\n\tDermatologist ID : " << dermaId << endl;
+
+		}
+	}
+
+	string getNow = "select NOW()";
+	const char* b = getNow.c_str();
+	qstate = mysql_query(conn, b);
+
+	if (!qstate)
+	{
+		res = mysql_store_result(conn);
+		while (row = mysql_fetch_row(res))
+			now = row[0];
+
+		cout << "\nNow : " << now;
+	}
+
+	if (appDate < now)
+	{
+		cout << "\n\tThis date and time are invalid !!" << endl;
+	}
+
+	if (appDate > now)
+	{
+		string insert_query = " Insert into appoinment ( Appoinment Date, PatientID, TreatmentID, TreatmentType, DermaID) values ( '" + appDate + "' , '" + appID + "', '" + trtID + "','" + trtType + "', '" + dermaId + "' )";
+		const char* q = insert_query.c_str();
+		qstate = mysql_query(conn, q);
+
+		if (!qstate)
+		{
+			cout << endl << " Appointment booked ! " << endl;
+		}
+
+		else
+		{
+			cout << "Query error .." << mysql_errno(conn) << endl;
+		}
+
+	}
+
+	cout << "\n\n Press any key to return ";
+	getch();
+
+	DermaMenu();
+}
+void UpdateDeleteAppointment()
+{
+	system("pause");
+	system("cls");
+
+	int chooseOne;
+
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					UPDATE & DELETE APPOINTMENT  								   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+
+	string search_query = "select* from appoinment where DermaID = '" + ID + "'and AppointmentDate > NOW() ";
+	const char* f = search_query.c_str();
+	qstate = mysql_query(conn, f);
+	res = mysql_store_result(conn);
+
+	cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+	cout << setw(6) << "Appointment ID" << setw(23) << "Appointment Date" << setw(18) << " Patient ID" << setw(16) << "Treatment ID" << setw(20) << "Treatment Name" << setw(16) << " Dermatologist ID" << endl; 
+
+	while ((row = mysql_fetch_row(res)))
+	{
+		cout << setw(6) << row[0] << setw(26) << row[3] << setw(18) << row[1] << setw(17) << row[5] << setw(20) << row[4] << setw(17) << row[2] << endl;
+	}
+	cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+
+
+	int stock = 0;
+	int newAppointment;
+	char choose;
+	string appId, appDate, patId, trtId, trtname, dermaId;
+
+	do
+	{
+		cout << " Press U to update or press D to delete:";
+		cin >> choose;
+	}
+
+	while (choose !='u' && choose != 'U' && choose != 'd' && choose != 'D');
+	
+	cout << "\n\tAppointment ID : ";
+	cin >> appId;
+
+	if (choose == 'u' || choose == 'U')
+	{
+		int chooseUpdate = 0;
+
+		do
+		{
+			string search_query = "select* from appoinment where Appoinment ID = '" + appId + "";
+			const char* q = search_query.c_str();
+			qstate = mysql_query(conn, q);
+			res = mysql_store_result(conn);
+
+			while (row = mysql_fetch_row(res))
+			{
+				cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+				cout << "\n\t\t\t\t			New Details Appointment								   " << endl;
+				cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+
+				cout << "\n\t\tAppointment ID: " << row[0] << " (Uneditable)" << "\n\n\t\t1) Appointment Date: " << row[3] << "\n\t\t2) Save Your Update" << endl;
+
+				stock = stoi(row[2]);
+			}
+	
+			cout << "\n\t\t\t\t Select one : " << endl;
+			cout << "\n\t\t\t\t 1. Insert New Date " << endl;
+			cout << "\n\t\t\t\t 2. Return to cancel update" << endl;
+
+			cin >> chooseUpdate;
+
+			cin.ignore(1, '\n');
+			if (chooseUpdate == 1)
+			{
+				cout << "\n\tPlease Insert New Date (yyyy-mm-dd): ";
+				getline(cin, appDate);
+
+				string update_query = "update Appoinment set AppoinmentDate = '" + appDate + "' where AppoinmentID = '" + appId + "'";
+				const char* q = update_query.c_str();
+				qstate = mysql_query(conn, q);
+
+			}
+
+			else if (chooseUpdate == 2)
+
+			{
+				AppointmentDerma();
+			}
+
+		} while (true);
+	}
+
+	else if (choose == 'd' || choose == 'D')
+	{
+		char choose2;
+		do
+		{
+			cout << "\n\tPlease verify to delete the Appointment. Press Y to proceed.";
+			cin >> choose2;
+
+			if (choose2 == 'y' || choose2 == 'Y')
+			{
+				
+			}
+		}
+
+		while (choose2 != 'y' && choose2 != 'Y' && choose2 != 'n' && choose2 != 'N');
+	}
+
+}
+ //general function for every user can use start 
+void ListTreatment()
+{
+	system("pause");
+	system("cls");
+
+	int chooseOne, choose;
+	string treatmentId;
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					LIST OF TREATMENT AVAILABLE  								   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+
+	qstate = mysql_query(conn, "select* from treatment");
+	if (!qstate) // query run t0 search from db 
+	{
+		res = mysql_store_result(conn);
+		cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+		cout << setw(6) << "TreamentID" << setw(10) << " Cost" << setw(25) << "Name" << setw(18) << "Dermatologist" << endl;
+
+		while ((row = mysql_fetch_row(res)))
+		{
+			cout << setw(6) << row[0] << setw(14) << row[1] << setw(26) << row[2] << setw(15) << row[3] << endl;
+		}
+		cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+		getch();
+		PatientMenu();
+	}
+
+	else //if cannot do the query 
+	{
+		cout << "Query execution error! " << mysql_errno(conn) << endl;
+	}
+}
+void Payment()
+{
+	system("pause");
+	system("cls");
+
+	int chooseOne;
+	string  trtType, trtCost; //declaring the variable 
+	double trtprice = 0, trttax = 0.06, trtpayment = 0; // declaring the constant variable 
+
+
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					E-RECEIPT  								   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+
+	string search_query = "select* from payment where PatientID = '" + ID + "'";
+	const char* a = search_query.c_str();
+	qstate = mysql_query(conn, a);
+	res = mysql_store_result(conn);
+
+	while (row = mysql_fetch_row(res))
+	{
+		cout << "\n\t\t\t\t****************************************************************" << endl;
+		cout << "\n\t\t\t\t Dear , " << endl;
+		cout << "\n\t\t\t\t\t\t\t\t\t" << name << endl << endl;
+		cout << "\n\t\t\t\t\t\t\t\tThank you for choosing FYQA AESTHETIC CLINIC			   " << endl;
+
+		trtType = row[9];
+		trtprice = stoi(row[7]);
+		cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+		cout << "\n\tTreatment : " << "\t TreatmentPrice : " << "Tax Charged :" << endl;
+		cout << "\n\t\t\t\t----------------------------------------------------------------" << endl;
+		cout << "\n\t" << row[9] << "\t" << row[7] << "\t" << " 6% " << endl;
+	
+	};
+
+	trtpayment = (trtprice * trttax) + trtprice; //receipt formula calculation
+	cout << "\n Total treatment : RM " << trtpayment;
+
+	cout << " Pres any key to return.";
+	getch();
+	PatientMenu(); //function return to patient menu after finish view receipt
+}
+
+
+void ReportTreatment() //general function for every user can use end 
+{
+	system("pause");
+	system("cls");
+
+	cout << "\n\t\t\t\t================================================================" << endl;
+	cout << "\n\t\t\t\t\t		FYQA AESTHETIC CLINIC MANAGEMENT SYSTEM                " << endl << endl;
+	cout << "\n\t\t\t\t\t					CLINIC REPORT ON TREATMENT 					   " << endl;
+	cout << "\t\t                                                                      " << endl;
+	cout << "\n\t\t\t\t================================================================" << endl;
+
+	string date; //variable data type for this function
+
+	cout << "\n\tPlease insert a date you would like to preview : ";
+	cin >> date; 
+
+	string array = "select* from appoinment where AppoinmentDate like STR_TO_DATE ('" + date + "', '%d-%m%Y' ) ";
+
+
+	const char* z = array.c_str();
+	qstate + mysql_query(conn, z);
+
+	int j = 0;
+
+	res = mysql_store_result(conn);
+
+	while (row = mysql_fetch_row(res))
+	{
+		date = row[0];
+		j++;
+	}
+
+	cout << "\n\tThis is the report generated :" << j; // displaying the report and information needed
+	getch();
+	DermaMenu(); //return to the main dermatologist menu
+}
